@@ -2,6 +2,9 @@ library(lubridate)
 library(ggplot2)
 library(dplyr)
 library(tidyr)
+library(zoo)
+library(tseries)
+library(forecast)
 
 file1 = "../Maranello_20170601_20170622"
 file2 = "../Maranello_20170608_20170613"
@@ -51,4 +54,35 @@ dailyAvg = aggregate( . ~ cell + hm , data = da, mean)
 
 ggplot(data=dailyAvg,aes(x=hm,y=value,colour=cell,group=cell))+geom_point()+geom_line()
 
+
+################################################àààà
+# CONVERT TO TIME SERIES
+
+ts = read.zoo(filter(x,cell=="486-1004") %>% select(time,value), format = "%Y%m%d_%H%M", FUN=as.POSIXct)
+ts_day<-ts(na.approx(ts),frequency=4*24)
+plot(decompose(ts_day))
+
+
+
+start(ts)
+end(ts)
+plot(ts)
+
+approx = na.approx(ts)
+dif = diff(approx,differences=4)
+plot(dif)
+adf.test(dif, alternative="stationary", k=0)
+
+acf(dif,lag.max = 20)
+pacf(dif,lag.max = 20)
+fit1 = Arima(approx,order=c(1,1,1),seasonal = list(order = c(0, 1, 1), period = 4*24))
+
+fit2 = auto.arima(approx)
+fc = forecast(fit1, h=4*24)
+plot(fc)
+
+
+
+
+data(AirPassengers)
 
